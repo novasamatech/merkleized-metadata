@@ -26,6 +26,7 @@ use alloc::string::String;
 use extrinsic_decoder::{
 	decode_extrinsic_and_collect_type_ids, decode_extrinsic_parts_and_collect_type_ids,
 };
+pub use extrinsic_decoder::TypeResolver;
 use frame_metadata::RuntimeMetadata;
 
 use codec::{Encode, Decode};
