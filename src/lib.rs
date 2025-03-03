@@ -27,18 +27,24 @@ use extrinsic_decoder::{
 	decode_extrinsic_and_collect_type_ids, decode_extrinsic_parts_and_collect_type_ids,
 };
 use frame_metadata::RuntimeMetadata;
+
+use codec::{Encode, Decode};
+
 use from_frame_metadata::FrameMetadataPrepared;
 use merkle_tree::MerkleTree;
 pub use merkle_tree::Proof;
-use types::MetadataDigest;
 
 mod extrinsic_decoder;
 mod from_frame_metadata;
 mod merkle_tree;
+use merkle_tree::{NodeIndex, get_hash};
+
 pub mod types;
+use types::MetadataDigest;
+pub use types::Hash;
 
 /// Extra information that is required to generate the [`MetadataDigest`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Encode, Decode)]
 pub struct ExtraInfo {
 	/// The spec version of the runtime.
 	pub spec_version: u32,
@@ -72,6 +78,36 @@ pub fn generate_metadata_digest(
 		decimals: extra_info.decimals,
 		token_symbol: extra_info.token_symbol,
 	})
+}
+
+pub fn verify_metadata_digest(
+	proof: Proof,
+	extrinsic_metadata_hash: Hash,
+	extra_info: ExtraInfo,
+	expected_metadata_hash: Hash
+) -> Result<(), String> {
+	let proof_hash = get_hash(
+    &mut &proof.leaf_indices[..], 
+    &mut &proof.leaves[..], 
+    &mut &proof.nodes[..],
+    NodeIndex(0)
+  );
+
+  let metadata_hash = MetadataDigest::V1 { 
+    types_tree_root: proof_hash, 
+    extrinsic_metadata_hash: extrinsic_metadata_hash,
+    spec_version: extra_info.spec_version,
+    spec_name: extra_info.spec_name.clone(),
+    base58_prefix: extra_info.base58_prefix,
+    decimals: extra_info.decimals,
+    token_symbol: extra_info.token_symbol.clone() 
+  }.hash();
+
+  if metadata_hash == expected_metadata_hash {
+		Ok(())
+	} else {
+		Err("Metadata hash mismatch".into())
+	}
 }
 
 /// Generate a proof for the given `extrinsic` using the given `metadata`.
