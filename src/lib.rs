@@ -41,8 +41,7 @@ mod merkle_tree;
 use merkle_tree::{NodeIndex, get_hash};
 
 pub mod types;
-use types::MetadataDigest;
-pub use types::Hash;
+use types::{MetadataDigest, Hash};
 
 /// Extra information that is required to generate the [`MetadataDigest`].
 #[derive(Debug, Clone, Encode, Decode)]
@@ -86,7 +85,7 @@ pub fn verify_metadata_digest(
 	extrinsic_metadata_hash: Hash,
 	extra_info: ExtraInfo,
 	expected_metadata_hash: Hash
-) -> Result<(), String> {
+) -> bool {
 	let proof_hash = get_hash(
     &mut &proof.leaf_indices[..], 
     &mut &proof.leaves[..], 
@@ -104,11 +103,7 @@ pub fn verify_metadata_digest(
     token_symbol: extra_info.token_symbol.clone() 
   }.hash();
 
-  if metadata_hash == expected_metadata_hash {
-		Ok(())
-	} else {
-		Err("Metadata hash mismatch".into())
-	}
+  metadata_hash == expected_metadata_hash
 }
 
 /// Generate a proof for the given `extrinsic` using the given `metadata`.

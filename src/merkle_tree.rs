@@ -5,7 +5,7 @@ use alloc::{
 	string::String,
 	vec::Vec,
 };
-use codec::{Compact, Encode};
+use codec::{Compact, Encode, Decode};
 use core::{cmp::Ordering, fmt::Debug, iter::Peekable};
 
 /// A node of a [`MerkleTree`].
@@ -140,7 +140,7 @@ impl NodeIndex {
 /// - `leaves`: `[u32, u16]`
 /// - `leaf_indices`: `[4, 6]`
 /// - `nodes`: `[hashOf(3), hashOf(5)]`
-#[derive(Clone, Debug, PartialEq, Eq, Encode)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct Proof {
 	/// The leaves of the tree.
 	///
