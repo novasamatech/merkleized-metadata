@@ -80,6 +80,7 @@ pub fn generate_metadata_digest(
 	})
 }
 
+/// Verifies that given proof matches and additional info matches [`MetadataDigest`] hash.
 pub fn verify_metadata_digest(
 	proof: Proof,
 	extrinsic_metadata_hash: Hash,
