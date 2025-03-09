@@ -1,5 +1,5 @@
 use alloc::{string::String, vec::Vec};
-use codec::{Compact, Encode, Decode};
+use codec::{Compact, Decode, Encode};
 
 /// A reference to a type in the registry.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode, Default, Copy)]

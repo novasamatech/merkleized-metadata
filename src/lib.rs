@@ -23,13 +23,13 @@
 extern crate alloc;
 
 use alloc::string::String;
+pub use extrinsic_decoder::TypeResolver;
 use extrinsic_decoder::{
 	decode_extrinsic_and_collect_type_ids, decode_extrinsic_parts_and_collect_type_ids,
 };
-pub use extrinsic_decoder::TypeResolver;
 use frame_metadata::RuntimeMetadata;
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 
 use from_frame_metadata::FrameMetadataPrepared;
 use merkle_tree::MerkleTree;
@@ -38,10 +38,10 @@ pub use merkle_tree::Proof;
 mod extrinsic_decoder;
 mod from_frame_metadata;
 mod merkle_tree;
-use merkle_tree::{NodeIndex, get_hash};
+use merkle_tree::{get_hash, NodeIndex};
 
 pub mod types;
-use types::{MetadataDigest, Hash};
+use types::{Hash, MetadataDigest};
 
 /// Extra information that is required to generate the [`MetadataDigest`].
 #[derive(Debug, Clone, Encode, Decode)]
@@ -85,26 +85,27 @@ pub fn verify_metadata_digest(
 	proof: Proof,
 	extrinsic_metadata_hash: Hash,
 	extra_info: ExtraInfo,
-	expected_metadata_hash: Hash
+	expected_metadata_hash: Hash,
 ) -> bool {
 	let proof_hash = get_hash(
-    &mut &proof.leaf_indices[..], 
-    &mut &proof.leaves[..], 
-    &mut &proof.nodes[..],
-    NodeIndex(0)
-  );
+		&mut &proof.leaf_indices[..],
+		&mut &proof.leaves[..],
+		&mut &proof.nodes[..],
+		NodeIndex(0),
+	);
 
-  let metadata_hash = MetadataDigest::V1 { 
-    types_tree_root: proof_hash, 
-    extrinsic_metadata_hash: extrinsic_metadata_hash,
-    spec_version: extra_info.spec_version,
-    spec_name: extra_info.spec_name.clone(),
-    base58_prefix: extra_info.base58_prefix,
-    decimals: extra_info.decimals,
-    token_symbol: extra_info.token_symbol.clone() 
-  }.hash();
+	let metadata_hash = MetadataDigest::V1 {
+		types_tree_root: proof_hash,
+		extrinsic_metadata_hash,
+		spec_version: extra_info.spec_version,
+		spec_name: extra_info.spec_name.clone(),
+		base58_prefix: extra_info.base58_prefix,
+		decimals: extra_info.decimals,
+		token_symbol: extra_info.token_symbol.clone(),
+	}
+	.hash();
 
-  metadata_hash == expected_metadata_hash
+	metadata_hash == expected_metadata_hash
 }
 
 /// Generate a proof for the given `extrinsic` using the given `metadata`.

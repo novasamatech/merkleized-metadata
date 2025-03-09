@@ -5,7 +5,7 @@ use alloc::{
 	string::String,
 	vec::Vec,
 };
-use codec::{Compact, Encode, Decode};
+use codec::{Compact, Decode, Encode};
 use core::{cmp::Ordering, fmt::Debug, iter::Peekable};
 
 /// A node of a [`MerkleTree`].
