@@ -1,8 +1,8 @@
 use alloc::{string::String, vec::Vec};
-use codec::{Compact, Encode};
+use codec::{Compact, Decode, Encode};
 
 /// A reference to a type in the registry.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Default, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode, Default, Copy)]
 pub enum TypeRef {
 	#[codec(index = 0)]
 	Bool,
@@ -66,7 +66,7 @@ impl TypeRef {
 /// The hash type.
 pub type Hash = [u8; 32];
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub enum TypeDef {
 	/// A composite type (e.g. a struct or a tuple)
 	#[codec(index = 0)]
@@ -99,33 +99,33 @@ impl TypeDef {
 	}
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct Field {
 	pub name: Option<String>,
 	pub ty: TypeRef,
 	pub type_name: Option<String>,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct EnumerationVariant {
 	pub name: String,
 	pub fields: Vec<Field>,
 	pub index: Compact<u32>,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct TypeDefArray {
 	pub len: u32,
 	pub type_param: TypeRef,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Encode, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Encode, Decode, Debug)]
 pub struct TypeDefBitSequence {
 	pub num_bytes: u8,
 	pub least_significant_bit_first: bool,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct Type {
 	/// The unique path to the type. Can be empty for built-in types
 	pub path: Vec<String>,
@@ -142,7 +142,7 @@ impl Type {
 	}
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct ExtrinsicMetadata {
 	/// Extrinsic version.
 	pub version: u8,
@@ -159,7 +159,7 @@ impl ExtrinsicMetadata {
 	}
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub struct SignedExtensionMetadata {
 	pub identifier: String,
 	pub included_in_extrinsic: TypeRef,
@@ -169,7 +169,7 @@ pub struct SignedExtensionMetadata {
 /// The metadata digest.
 ///
 /// The hash of this digest is the "metadata hash".
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Encode, Decode)]
 pub enum MetadataDigest {
 	Disabled,
 	V1 {

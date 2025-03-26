@@ -26,13 +26,13 @@ use crate::{
 /// to prevent a stack overflow.
 const MAX_STACK_DEPTH: usize = 1000;
 
-struct TypeResolver {
+pub struct TypeResolver {
 	raw_type_id_to_types: BTreeMap<u32, Vec<Type>>,
 	stack_depth: AtomicUsize,
 }
 
 impl TypeResolver {
-	fn new<'a>(types: impl Iterator<Item = &'a Type>) -> Self {
+	pub fn new<'a>(types: impl Iterator<Item = &'a Type>) -> Self {
 		Self {
 			raw_type_id_to_types: types.fold(Default::default(), |mut map, ty| {
 				map.entry(ty.type_id.0).or_default().push(ty.clone());

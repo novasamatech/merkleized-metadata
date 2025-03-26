@@ -5,7 +5,7 @@ use alloc::{
 	string::String,
 	vec::Vec,
 };
-use codec::{Compact, Encode};
+use codec::{Compact, Decode, Encode};
 use core::{cmp::Ordering, fmt::Debug, iter::Peekable};
 
 /// A node of a [`MerkleTree`].
@@ -64,7 +64,7 @@ impl Ord for TypeId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct NodeIndex(usize);
+pub struct NodeIndex(pub usize);
 
 impl NodeIndex {
 	/// Returns if this is the root node index.
@@ -140,7 +140,7 @@ impl NodeIndex {
 /// - `leaves`: `[u32, u16]`
 /// - `leaf_indices`: `[4, 6]`
 /// - `nodes`: `[hashOf(3), hashOf(5)]`
-#[derive(Clone, Debug, PartialEq, Eq, Encode)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct Proof {
 	/// The leaves of the tree.
 	///
@@ -349,6 +349,43 @@ impl MerkleTree {
 	}
 }
 
+pub fn get_hash(
+	leaf_indices: &mut &[u32],
+	leaves: &mut &[Type],
+	nodes: &mut &[Hash],
+	node_index: NodeIndex,
+) -> Hash {
+	let is_descendent = if leaf_indices.is_empty() {
+		false
+	} else {
+		let current_leaf = NodeIndex(leaf_indices[0] as usize);
+
+		if node_index == current_leaf {
+			let hash = blake3::hash(&leaves[0].encode());
+
+			*leaves = &leaves[1..];
+			*leaf_indices = &leaf_indices[1..];
+			return hash.into();
+		}
+
+		node_index.is_descendent(current_leaf)
+	};
+
+	if !is_descendent {
+		let res = nodes[0];
+		*nodes = &nodes[1..];
+		return res;
+	}
+
+	let left_child = node_index.left_child();
+	let left = get_hash(leaf_indices, leaves, nodes, left_child);
+
+	let right_child = node_index.right_child();
+	let right = get_hash(leaf_indices, leaves, nodes, right_child);
+
+	blake3::hash(&(left, right).encode()).into()
+}
+
 #[cfg(test)]
 mod tests {
 	use std::fs;
@@ -419,56 +456,6 @@ mod tests {
 		}
 	}
 
-	fn get_hash(
-		leaf_indices: &mut &[u32],
-		leaves: &mut &[Type],
-		nodes: &mut &[Hash],
-		node_index: NodeIndex,
-		merkle_tree: &MerkleTree,
-	) -> Hash {
-		let is_descendent = if leaf_indices.is_empty() {
-			false
-		} else {
-			let current_leaf = NodeIndex(leaf_indices[0] as usize);
-
-			if node_index == current_leaf {
-				let hash = blake3::hash(&leaves[0].encode());
-
-				*leaves = &leaves[1..];
-				*leaf_indices = &leaf_indices[1..];
-				return hash.into();
-			}
-
-			node_index.is_descendent(current_leaf)
-		};
-
-		if !is_descendent {
-			let res = nodes[0];
-			*nodes = &nodes[1..];
-			return res;
-		}
-
-		let left_child = node_index.left_child();
-		let left = get_hash(leaf_indices, leaves, nodes, left_child, merkle_tree);
-
-		assert_eq!(
-			left,
-			*merkle_tree.node_index_to_hash.get(&left_child).unwrap(),
-			"Found wrong {left_child:?}"
-		);
-
-		let right_child = node_index.right_child();
-		let right = get_hash(leaf_indices, leaves, nodes, right_child, merkle_tree);
-
-		assert_eq!(
-			right,
-			*merkle_tree.node_index_to_hash.get(&right_child).unwrap(),
-			"Found wrong {right_child:?}"
-		);
-
-		blake3::hash(&(left, right).encode()).into()
-	}
-
 	// `Balances::transfer_keep_alive`
 	const TEST_EXT: &str = "0x2d028400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d01bce7c8f572d39cee240e3d50958f68a5c129e0ac0d4eb9222de70abdfa8c44382a78eded433782e6b614a97d8fd609a3f20162f3f3b3c16e7e8489b2bd4fa98c070000000403008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4828";
 	const TEST_CALL: &str =
@@ -523,7 +510,6 @@ mod tests {
 			&mut &proof.leaves[..],
 			&mut &proof.nodes[..],
 			NodeIndex(0),
-			&merkle_tree,
 		);
 		assert_eq!(
 			array_bytes::bytes2hex("0x", merkle_tree.root()),
@@ -618,7 +604,6 @@ mod tests {
 			&mut &proof.leaves[..],
 			&mut &proof.nodes[..],
 			NodeIndex(0),
-			&merkle_tree,
 		);
 		assert_eq!(
 			array_bytes::bytes2hex("0x", merkle_tree.root()),
